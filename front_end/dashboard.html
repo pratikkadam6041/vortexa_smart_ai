@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Select Farm Location</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+    body { font-family: Inter, sans-serif; }
+    #map { height: 256px; width: 100%; border-radius: 12px; }
+    .leaflet-tile-container img { image-rendering: pixelated; }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-[#a0d8a0] to-[#6aa96a] min-h-screen flex items-center justify-center p-5">
+  <div class="card p-8 rounded-3xl shadow-2xl max-w-lg w-full text-center bg-white/90 backdrop-blur-md">
+    <h1 class="text-2xl font-bold text-gray-800 mb-1">Select Farm Location</h1>
+    <p class="text-gray-600 mb-4">Use GPS or drag the marker. Live climate will be fetched and saved for planning.</p>
+
+    <div id="map" class="mb-4"></div>
+
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <input id="lat" class="px-4 py-3 rounded-xl border border-gray-200" placeholder="Latitude" readonly>
+      <input id="lon" class="px-4 py-3 rounded-xl border border-gray-200" placeholder="Longitude" readonly>
+    </div>
+
+    <div class="grid grid-cols-1 gap-3 mb-3">
+      <input id="area" type="number" step="0.01" min="0" class="px-4 py-3 rounded-xl border border-gray-200" placeholder="Field area (ha)">
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <button id="useLocation" class="w-full py-3 rounded-xl bg-gray-800 text-white font-semibold hover:bg-black">Use Current Location</button>
+      <button id="confirm" class="w-full py-3 rounded-xl bg-[#4CAF50] text-white font-semibold hover:bg-[#43A047]">Confirm</button>
+      <button id="skipFetch" class="w-full py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300">Skip Climate</button>
+    </div>
+
+    <p id="status" class="text-sm text-gray-600 mt-3"></p>
+  </div>
+
+  <script>
+    // Set your backend origin that serves /api/weather. If same origin, set "".
+    const API_BASE = "http://localhost:8000";
+
+    let map, marker;
+
+    function setFields(lat, lon) {
+      document.getElementById('lat').value = lat.toFixed(6);
+      document.getElementById('lon').value = lon.toFixed(6);
+    }
+
+    function setStatus(msg, ok = true) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.classList.toggle('text-green-700', ok);
+      el.classList.toggle('text-red-700', !ok);
+    }
+
+    function buildWeatherSummary(w) {
+      const daily = Array.isArray(w?.daily) ? w.daily : [];
+      const n = daily.length || 1;
+      const sum = (k) => daily.reduce((s, d) => s + (Number(d?.[k]) || 0), 0);
+      const avg = (k) => sum(k) / n;
+      const s = {
+        horizon_days: n,
+        tmax_avg: +avg('tmax').toFixed(1),
+        tmin_avg: +avg('tmin').toFixed(1),
+        rain_sum_mm: +sum('rain_mm').toFixed(1),
+        rh_avg: +avg('rh').toFixed(0),
+        wind_avg_ms: +avg('wind').toFixed(2),
+        solar_avg: +avg('solar').toFixed(2),
+      };
+      if (daily[0]?.eto != null) s.eto_avg = +avg('eto').toFixed(2);
+      return s;
+    }
+
+    async function LiveClimate(lat, lon) {
+      const url = (API_BASE || "") + `/api/weather?lat=${lat}&lon=${lon}`;
+      const r = await fetch(url, { credentials: 'include' });
+      if (!r.ok) throw new Error('Weather API error ' + r.status);
+      return r.json();
+    }
+
+    async function saveLocationAndFetch(lat, lon, doFetch = true) {
+      const loc = { lat, lon };
+      localStorage.setItem('farmLocation', JSON.stringify(loc));
+
+      const areaStr = (document.getElementById('area').value || '').trim();
+      if (areaStr) localStorage.setItem('area_ha', String(parseFloat(areaStr) || 0));
+
+      let climateFlags = { live: false, fetchedAt: new Date().toISOString() };
+
+      if (doFetch) {
+        setStatus('Fetching live climate...', true);
+        try {
+          const w = await fetchLiveClimate(lat, lon);
+          localStorage.setItem('weather', JSON.stringify(w));
+          const summary = w?.summary || buildWeatherSummary(w);
+          localStorage.setItem('weatherSummary', JSON.stringify(summary));
+          if (w?.admin?.district) localStorage.setItem('district', w.admin.district);
+          climateFlags.live = true;
+          setStatus('Live climate cached.', true);
+        } catch (e) {
+          console.error(e);
+          setStatus('Live climate unavailable. Proceeding without it.', false);
+        }
+      } else {
+        setStatus('Saved location without climate fetch.', true);
+      }
+
+      localStorage.setItem('climateFlags', JSON.stringify(climateFlags));
+      window.location.href = 'crop_selection.html';
+    }
+
+    function initMap(lat = 18.5204, lon = 73.8567) {
+      map = L.map('map').setView([lat, lon], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+      marker = L.marker([lat, lon], { draggable: true }).addTo(map);
+      setFields(lat, lon);
+
+      marker.on('dragend', () => {
+        const c = marker.getLatLng();
+        setFields(c.lat, c.lng);
+      });
+
+      map.on('click', (e) => {
+        marker.setLatLng(e.latlng);
+        setFields(e.latlng.lat, e.latlng.lng);
+      });
+    }
+
+    document.getElementById('useLocation').addEventListener('click', () => {
+      if (!navigator.geolocation) return setStatus('Geolocation not supported.', false);
+      setStatus('Requesting GPS...', true);
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { latitude, longitude } = pos.coords;
+          map.setView([latitude, longitude], 12);
+          marker.setLatLng([latitude, longitude]);
+          setFields(latitude, longitude);
+          setStatus('GPS position set. Click Confirm to fetch climate.', true);
+        },
+        err => {
+          console.error(err);
+          setStatus('Could not access GPS. Move marker manually.', false);
+        },
+        { enableHighAccuracy: true, timeout: 15000 }
+      );
+    });
+
+    document.getElementById('confirm').addEventListener('click', () => {
+      const lat = parseFloat(document.getElementById('lat').value);
+      const lon = parseFloat(document.getElementById('lon').value);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        saveLocationAndFetch(lat, lon, true);
+      } else {
+        setStatus('Select a valid location first.', false);
+      }
+    });
+
+    document.getElementById('skipFetch').addEventListener('click', () => {
+      const lat = parseFloat(document.getElementById('lat').value);
+      const lon = parseFloat(document.getElementById('lon').value);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        saveLocationAndFetch(lat, lon, false);
+      } else {
+        setStatus('Select a valid location first.', false);
+      }
+    });
+
+    initMap();
+  </script>
+</body>
+</html>

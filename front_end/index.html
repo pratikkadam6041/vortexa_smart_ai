@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agri-Tech Platform Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom, #a0d8a0, #6aa96a);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .logo svg {
+            fill: white;
+            width: 40px;
+            height: 40px;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-[#a0d8a0] to-[#6aa96a]">
+    <div class="bg-white bg-opacity-90 backdrop-blur-md container rounded-3xl shadow-2xl p-10 max-w-sm w-full text-center">
+        <div class="flex justify-center mb-6">
+            <div class="h-20 w-20 bg-[#4CAF50] rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9v-2h2v2zm-1-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm1-5H9V8h2v2zm2 5h-2v-2h2v2zm2-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-1-5h-2V8h2v2z"/>
+                </svg>
+            </div>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Welcome to Agri-Tech Platform</h1>
+        <p class="text-gray-600 mb-6" id="login-text">Login with your Indian Mobile Number</p>
+        
+        <!-- Phone Number Input -->
+        <div id="phone-input-container" class="flex items-center border border-gray-300 rounded-xl px-4 py-3 mb-6">
+            <span class="font-bold text-gray-600 mr-2">+91</span>
+            <input type="tel" id="phone-number" placeholder="Enter your 10-digit number" class="flex-grow border-none outline-none text-lg">
+        </div>
+        
+        <!-- OTP Input (Hidden by default) -->
+        <div id="otp-input-container" class="hidden flex items-center border border-gray-300 rounded-xl px-4 py-3 mb-6">
+            <input type="text" id="otp-code" placeholder="Enter OTP" class="flex-grow border-none outline-none text-lg text-center" maxlength="6">
+        </div>
+
+        <button id="main-button" onclick="getOTP()" class="w-full px-6 py-4 bg-[#4CAF50] text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-colors duration-300 transform hover:scale-105">
+            GET OTP
+        </button>
+        <div id="message-box" class="mt-4 font-bold"></div>
+        <p class="text-sm text-gray-600 mt-4">Don't have an account? <a href="#" class="text-[#4CAF50] font-bold">Sign up</a></p>
+    </div>
+    <script>
+        const phoneInputContainer = document.getElementById('phone-input-container');
+        const otpInputContainer = document.getElementById('otp-input-container');
+        const mainButton = document.getElementById('main-button');
+        const loginText = document.getElementById('login-text');
+        const messageBox = document.getElementById('message-box');
+        
+        function getOTP() {
+            const phoneNumber = document.getElementById('phone-number').value;
+
+            if (phoneInputContainer.classList.contains('hidden')) {
+                // If OTP input is visible, verify the code
+                verifyOTP();
+            } else {
+                // If phone number input is visible, send mock OTP
+                if (phoneNumber.length === 10 && /^\d{10}$/.test(phoneNumber)) {
+                    messageBox.classList.remove('text-red-500');
+                    messageBox.classList.add('text-green-500');
+                    messageBox.innerHTML = 'OTP sent! Please check your phone.';
+                    
+                    phoneInputContainer.classList.add('hidden');
+                    otpInputContainer.classList.remove('hidden');
+                    mainButton.innerHTML = 'VERIFY OTP';
+                    loginText.innerHTML = 'Enter the OTP sent to your number';
+
+                } else {
+                    messageBox.classList.remove('text-green-500');
+                    messageBox.classList.add('text-red-500');
+                    messageBox.innerHTML = 'Please enter a valid 10-digit number.';
+                }
+            }
+        }
+
+        function verifyOTP() {
+            const otpCode = document.getElementById('otp-code').value;
+            const mockOTP = '123456'; // A hard-coded mock OTP for demonstration
+
+            if (otpCode === mockOTP) {
+                messageBox.classList.remove('text-red-500');
+                messageBox.classList.add('text-green-500');
+                messageBox.innerHTML = 'OTP verified! Redirecting to location...';
+
+                // Simulate a successful login and redirect
+                setTimeout(() => {
+                    window.location.href = 'location.html';
+                }, 1500);
+
+            } else {
+                messageBox.classList.remove('text-green-500');
+                messageBox.classList.add('text-red-500');
+                messageBox.innerHTML = 'Invalid OTP. Please try again.';
+            }
+        }
+    </script>
+</body>
+</html>

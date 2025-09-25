@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom, #a0d8a0, #6aa96a);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+        }
+        .icon {
+            height: 24px;
+            width: 24px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-[#a0d8a0] to-[#6aa96a]">
+    <div class="card p-8 rounded-3xl shadow-2xl max-w-lg w-full h-[90vh] flex flex-col">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-xl font-bold text-gray-800">Historical Analytics</h1>
+            <a href="dashboard.html" class="h-10 w-10 bg-[#4CAF50] rounded-full flex items-center justify-center">
+                <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9v-2h2v2zm-1-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm1-5H9V8h2v2zm2 5h-2v-2h2v2zm2-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-1-5h-2V8h2v2z"/>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Analytics Content -->
+        <div class="flex-grow overflow-y-auto">
+            <!-- Filter Section -->
+            <div class="mb-6 p-4 bg-gray-100 rounded-2xl flex justify-between space-x-2">
+                <div class="flex-1 text-center bg-white p-2 rounded-xl shadow-sm">
+                    <p class="text-xs text-gray-500">Filter by Crop</p>
+                    <p class="text-sm font-bold text-gray-800 mt-1">Corn</p>
+                </div>
+                <div class="flex-1 text-center bg-white p-2 rounded-xl shadow-sm">
+                    <p class="text-xs text-gray-500">Filter by Year</p>
+                    <p class="text-sm font-bold text-gray-800 mt-1">2018</p>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="mb-6 p-4 card rounded-2xl shadow">
+                <p class="text-sm text-gray-600 mb-2">Rainfall (mm)</p>
+                <canvas id="yieldChart" style="height:250px;"></canvas>
+            </div>
+
+            <!-- Key Learnings -->
+            <div class="p-4 bg-gray-100 rounded-2xl shadow-inner">
+                <h2 class="text-lg font-bold text-gray-800 mb-2">Key Learnings</h2>
+                <div class="bg-white p-3 rounded-xl shadow-sm">
+                    <p class="text-sm text-gray-700">2022: High Rainfall in July -> 15% Above Avg. Corn Yield</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Navigation -->
+        <div class="mt-auto flex justify-around items-center pt-4 border-t border-gray-200">
+            <a href="dashboard.html" class="flex flex-col items-center text-gray-400">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9v-2h2v2zm-1-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm1-5H9V8h2v2zm2 5h-2v-2h2v2zm2-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-1-5h-2V8h2v2z"/>
+                </svg>
+                <span class="text-xs">Home</span>
+            </a>
+            <a href="analytics.html" class="flex flex-col items-center text-[#4CAF50]">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9v-2h2v2zm-1-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm1-5H9V8h2v2zm2 5h-2v-2h2v2zm2-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-1-5h-2V8h2v2z"/>
+                </svg>
+                <span class="text-xs">Analytics</span>
+            </a>
+            <a href="settings.html" class="flex flex-col items-center text-gray-400">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9v-2h2v2zm-1-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm1-5H9V8h2v2zm2 5h-2v-2h2v2zm2-4c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-1-5h-2V8h2v2z"/>
+                </svg>
+                <span class="text-xs">Settings</span>
+            </a>
+        </div>
+    </div>
+    <script>
+        const ctx = document.getElementById('yieldChart').getContext('2d');
+        const yieldChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['2018', '2019', '2020', '2021', '2022', '2023'],
+                datasets: [{
+                    label: 'Yield (tons)',
+                    data: [12, 18, 15, 20, 25, 28],
+                    borderColor: '#4CAF50',
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                }, {
+                    label: 'Rainfall (mm)',
+                    data: [20, 30, 25, 35, 45, 50],
+                    borderColor: '#3b82f6',
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
