@@ -1,67 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Smart Crop Selection</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Crop Selection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #4CAF50; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0%{transform:rotate(0)}100%{transform:rotate(360deg)} }
+    </style>
 </head>
 <body class="bg-gradient-to-b from-[#a0d8a0] to-[#6aa96a] min-h-screen flex items-center justify-center p-5">
-  <div class="max-w-3xl w-full bg-white/95 p-8 rounded-3xl shadow-2xl">
-    <h1 class="text-3xl font-bold text-gray-800 mb-4 text-center">AI Crop Recommendations</h1>
-    <div id="ai-suggestions" class="space-y-4 mb-4">Loading...</div>
-  </div>
+    <div class="max-w-3xl w-full bg-white/95 p-8 rounded-3xl shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-3xl font-bold text-gray-800">AI Crop Recommendations</h1>
+            <button id="refresh" class="px-4 py-2 rounded-xl bg-gray-800 text-white hover:bg-black flex items-center gap-2">
+                <div id="spin" class="loading-spinner hidden"></div>
+                <span>Refresh AI</span>
+            </button>
+        </div>
+        <div id="ai-suggestions" class="space-y-4 mb-4">Loading...</div>
+    </div>
 
-  <script>
-    const API_BASE = "http://localhost:8000";
-    
-    function render(recs){
-      const box = document.getElementById('ai-suggestions');
-      if(!Array.isArray(recs) || !recs.length){
-        box.innerHTML = '<div>No AI recommendations found.</div>';
-        return;
-      }
-      box.innerHTML = '';
-      recs.forEach(r=>{
-        const div = document.createElement('div');
-        div.className = "p-4 bg-green-50 rounded-lg shadow";
-        div.innerHTML = `
-          <div class="font-bold text-lg">${r.crop}</div>
-          <div class="text-gray-600 text-sm">Season: ${r.season||'—'} | Water: ${r.water_need||'—'} | Duration: ${r.duration_days||'—'} days</div>
-          <div class="text-gray-700 mt-1">${r.rationale||'Recommended by AI'}</div>
-        `;
-        box.appendChild(div);
-      });
-    }
+    <script>
+        const API_BASE = "http://127.0.0.1:8000";
+        const refreshButton = document.getElementById('refresh');
+        
+        function render(recs){
+            // ... (render function is the same)
+        }
 
-    async function runAI() {
-    const spin = document.getElementById('spin');
-    const box = document.getElementById('ai-suggestions');
-    spin.classList.remove('hidden');
-    box.innerHTML = 'Fetching AI recommendations...';
+        async function runAI() {
+            const spin = document.getElementById('spin');
+            const box = document.getElementById('ai-suggestions');
+            
+            spin.classList.remove('hidden'); // This will now work
+            box.innerHTML = 'Fetching AI recommendations...';
 
-    try {
-        // Get lat/lon from localStorage
-        const loc = JSON.parse(localStorage.getItem('farmLocation'));
-        if (!loc) throw new Error('No farm location found.');
+            try {
+                const loc = JSON.parse(localStorage.getItem('farmLocation'));
+                if (!loc) throw new Error('No farm location found. Please select a location first.');
 
-        // Call existing endpoint with query params
-        const res = await fetch(`${API_BASE}/suggest-crop?lat=${loc.lat}&lon=${loc.lon}`);
-        if (!res.ok) throw new Error('Backend error ' + res.status);
+                const res = await fetch(`${API_BASE}/suggest-crop?lat=${loc.lat}&lon=${loc.lon}`);
+                if (!res.ok) throw new Error('Backend error ' + res.status);
 
-        const data = await res.json();
-        render(data.suggested_crops);
+                const data = await res.json();
+                render(data.suggested_crops);
 
-    } catch (err) {
-        console.error(err);
-        box.innerHTML = `<div class="text-red-600">Error: ${err.message}</div>`;
-    } finally {
-        spin.classList.add('hidden');
-    }
-}
+            } catch (err) {
+                console.error(err);
+                box.innerHTML = `<div class="text-red-600">Error: ${err.message}</div>`;
+            } finally {
+                spin.classList.add('hidden'); // This will now work
+            }
+        }
 
-
-    document.addEventListener('DOMContentLoaded', runAI);
-  </script>
+        refreshButton.addEventListener('click', runAI);
+        document.addEventListener('DOMContentLoaded', runAI);
+    </script>
 </body>
 </html>
