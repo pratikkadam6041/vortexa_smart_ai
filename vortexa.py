@@ -100,7 +100,9 @@ def read_user_fields(
 async def get_weather_endpoint(lat: float, lon: float):
     data = await get_live_weather(lat, lon)
     return data
-
+@app.get("/")
+def root():
+    return {"message": "Vortexa AI Crop Suggester API is live!"}
 @app.get("/suggest-crop")
 async def get_crop_suggestion_endpoint(lat: float, lon: float):
     try:

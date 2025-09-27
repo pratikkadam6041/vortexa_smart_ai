@@ -25,26 +25,37 @@ async def get_live_weather(lat, lon):
     except Exception as e:
         return {"error": f"An unexpected error occurred: {str(e)}"}
 
+# In api_handler.py
 async def get_soil_data(lat, lon):
-    url = f"https://rest.soilgrids.org/soilgrids/v2.0/properties/query?lon={lon}&lat={lat}&property=phh2o,clay&depth=0-5cm&value=mean"
+    # OpenLandMap provides data layers for different properties
+    # We will get pH and clay content
+    layers = "phh2o_0-5cm_mean,clay_0-5cm_mean"
+
+    # This is a Web Map Service (WMS) request URL
+    url = (f"https://layers.openlandmap.org/sol/wms"
+           f"?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo"
+           f"&LAYERS={layers}&QUERY_LAYERS={layers}"
+           f"&BBOX={lon-0.001},{lat-0.001},{lon+0.001},{lat+0.001}"
+           f"&HEIGHT=1&WIDTH=1&INFO_FORMAT=application/json&SRS=EPSG:4326"
+           f"&X=0&Y=0")
+
     try:
         async with httpx.AsyncClient() as client:
-            # Add a timeout
             r = await client.get(url, timeout=10.0)
             r.raise_for_status()
-            props = r.json().get('properties', {}).get('layers', [{}])[0].get('depths', [{}])[0].get('values', {})
-            ph = props.get('phh2o', {}).get('mean', -1)
-            clay = props.get('clay', {}).get('mean', -1)
-            return {"soil_ph": ph / 10.0 if ph != -1 else "No data",
-                    "clay_percentage": clay / 10.0 if clay != -1 else "No data"}
-    except httpx.HTTPStatusError as e:
-        return {"error": f"HTTP Error: {e.response.status_code} - {e.response.text}"}
-    except httpx.RequestError as e:
-        if isinstance(e, httpx.TimeoutException):
-             return {"error": "API request timed out."}
-        return {"error": f"Request Error: {str(e)}"}
+
+            data = r.json().get('features', [{}])[0].get('properties', {})
+
+            # The values from this API are direct, no need to divide by 10
+            ph_value = data.get('phh2o_0-5cm_mean')
+            clay_content = data.get('clay_0-5cm_mean')
+
+            return {
+                "soil_ph": round(ph_value, 2) if ph_value is not None else "No data",
+                "clay_percentage": round(clay_content, 2) if clay_content is not None else "No data"
+            }
     except Exception as e:
-        return {"error": f"An unexpected error occurred: {str(e)}"}
+        return {"error": str(e)}
 
 # In api_handler.py
 async def get_historical_weather(lat, lon):
